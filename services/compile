@@ -1,0 +1,42 @@
+#!/bin/bash
+
+LIBS=~/Desktop/code/docks/services/libs
+SER=~/Desktop/code/docks/services
+LIB=$1
+
+if [ $1 == "Utils.vala" ]
+then
+  valac --pkg gtk-layer-shell-0 --pkg Gtk-3.0 -C -H $LIBS/Utils.h --library $LIBS/Utils $SER/Utils.vala --basedir $LIBS
+  # The --pkg gtk-layer-shell-0 is neccesary
+  gcc --shared -fPIC -o $LIBS/libUtils.so $(pkg-config --cflags --libs gobject-2.0 gtk-layer-shell-0) $LIBS/Utils.c
+elif [ $1 == "Hyprland.vala" ]
+then
+  valac $LIBS/Utils.vapi --pkg Gtk-3.0 --pkg gtk-layer-shell-0 --pkg json-glib-1.0 -C -H $LIBS/Hyprland.h --library $LIBS/Hyprland $SER/Hyprland.vala --basedir $LIBS
+  gcc --shared -fPIC -o $LIBS/libHyprland.so $(pkg-config --cflags --libs gobject-2.0 json-glib-1.0 gtk-layer-shell-0) $LIBS/Hyprland.c
+elif [ $1 == "Upower.vala" ]
+then
+  valac $LIBS/Utils.vapi --pkg Gtk-3.0 --pkg gtk-layer-shell-0 --pkg json-glib-1.0 -C -H $LIBS/Upower.h --library $LIBS/Upower $SER/Upower.vala --basedir $LIBS/
+  gcc --shared -fPIC -o $LIBS/libUpower.so $(pkg-config --cflags --libs gobject-2.0 json-glib-1.0 gtk-layer-shell-0) $LIBS/Upower.c
+elif [ $1 == "Bluetooth.vala" ]
+then
+  valac -C -H $LIBS/Bluetooth.h --library $LIBS/Bluetooth $SER/Bluetooth.vala --basedir $LIBS/
+  gcc --shared -fPIC -o $LIBS/libBluetooth.so $(pkg-config --cflags --libs gobject-2.0) $LIBS/Bluetooth.c
+elif [ $1 == "Brightness.vala" ]
+then
+  valac -C -H $LIBS/Brightness.h --library $LIBS/Brightness $SER/Brightness.vala --basedir $LIBS/
+  gcc --shared -fPIC -o $LIBS/libBrightness.so $(pkg-config --cflags --libs gobject-2.0) $LIBS/Brightness.c
+elif [ $1 == "Network.vala" ]
+then
+  valac -C -H $LIBS/Network.h --library $LIBS/Network $SER/Network.vala --basedir $LIBS/
+  gcc --shared -fPIC -o $LIBS/libNetwork.so $(pkg-config --cflags --libs gobject-2.0) $LIBS/Network.c
+elif [ $1 == "Audio.vala" ]
+then
+  valac $LIBS/Utils.vapi --pkg Gtk-3.0 --pkg gtk-layer-shell-0 --pkg libpulse -C -H $LIBS/Audio.h --library $LIBS/Audio $SER/Audio.vala --basedir $LIBS/
+  gcc --shared -fPIC -o $LIBS/libAudio.so $(pkg-config --cflags --libs gobject-2.0 libpulse gtk-layer-shell-0) $LIBS/Audio.c
+elif [ $1 == "Appearance.vala" ]
+then
+  valac -C -H $LIBS/Appearance.h --library $LIBS/Appearance $LIBS/../Appearance.vala --basedir $LIBS/
+  gcc --shared -fPIC -o $LIBS/libAppearance.so $(pkg-config --cflags --libs gobject-2.0) $LIBS/Appearance.c
+else
+  echo "Wrong Input"
+fi

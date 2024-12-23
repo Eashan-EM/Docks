@@ -1,0 +1,21 @@
+/* Main Window Color Definition
+ * WIN: Window
+*/
+@define-color WIN_BG_CLR rgba(0, 0, 0, 0.0);
+@define-color WIN_FN_CLR rgba(255, 255, 255, 1.0);
+
+/*  Base Box Color Definition
+ *  BASE: Base Box
+*/
+@define-color BASE_BG_CLR rgba(35, 35, 35, 1.0);
+
+/* Background for boxes Color Definition
+*/
+@define-color BOX_BG_CLR rgba(80, 80, 80, 1.0);
+
+/* Workspace Color Definition
+ * AC_WS: Active Workspace
+ * N_AC_WS: Non Active Workspace
+*/
+@define-color AC_WS_BG_CLR rgba(204, 204, 204, 1.0);
+@define-color N_AC_WS_BG_CLR rgba(128, 128, 128, 1.0);

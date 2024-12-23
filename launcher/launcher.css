@@ -1,0 +1,59 @@
+@import "/home/em/Desktop/code/docks/themes/theme.css";
+
+window {
+  background: @WIN_BG_CLR;
+}
+
+button {
+  padding: 0px;
+  border: none;
+  outline: none;
+  text-decoration: none;
+  box-shadow: none;
+  text-shadow: none;
+  color: @AC_WS_BG_CLR;
+}
+
+button:hover {
+  background: @N_AC_WS_BG_CLR;
+  padding: 0px;
+  border: none;
+  outline: none;
+  text-decoration: none;
+  box-shadow: none;
+  text-shadow: none;
+  color: @BASE_BG_CLR;
+}
+
+.searchBox {
+  min-height: 40px;
+  margin: 10px 10px 0px 10px;
+  border-radius: 4px;
+  background: @BOX_BG_CLR;
+}
+
+.searchBarEmpty {
+  margin-left: 5px;
+  color: @N_AC_WS_BG_CLR;
+}
+
+.appScroll {
+  min-height: 100px;
+}
+
+.selectedApp {
+  background: @N_AC_WS_BG_CLR;
+  color: @BASE_BG_CLR;
+}
+
+.baseBox {
+  min-width: 200px;
+  background: @BASE_BG_CLR;
+  border-radius: 5px;
+}
+
+.appHolder {
+  background: @BOX_BG_CLR;
+  margin: 10px;
+  border-radius: 4px;
+}

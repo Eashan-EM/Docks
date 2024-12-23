@@ -1,0 +1,5 @@
+<object class="GtkLabel" id="button1">
+  <style>
+    <class name="alpha"/>
+  </style>
+</object>

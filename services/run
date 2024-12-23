@@ -1,0 +1,19 @@
+#!/bin/bash
+
+LIBS=~/Desktop/code/docks/services/libs
+FILE=$1
+
+if [ $1 == "bar" ]
+then
+  valac --pkg libpulse --pkg gtk-layer-shell-0 --pkg Gtk-3.0 -X -I$LIBS -X -L$LIBS -X -lUtils $LIBS/Utils.vapi -X -lHyprland $LIBS/Hyprland.vapi -X -lUpower $LIBS/Upower.vapi -X -lBluetooth $LIBS/Bluetooth.vapi -X -lBrightness $LIBS/Brightness.vapi -X -lNetwork $LIBS/Network.vapi -X -lAudio $LIBS/Audio.vapi -X -lAppearance $LIBS/Appearance.vapi -o bar bar.vala --basedir ./
+elif [ $1 == "launcher" ]
+then
+  valac --pkg Gtk-3.0 --pkg gtk-layer-shell-0 -X -I$LIBS -X -L$LIBS -X -lUtils $LIBS/Utils.vapi -o launcher launcher.vala --basedir ./
+elif [ $1 == "settings.vala" ]
+then
+  echo "not"
+else
+  echo "Wrongs Input"
+fi
+
+LD_LIBRARY_PATH=$LIBS ./$FILE

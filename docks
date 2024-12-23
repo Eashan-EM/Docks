@@ -1,0 +1,40 @@
+#!/bin/bash
+
+DOCKS=~/Desktop/code/docks
+LIBS=$DOCKS/services/libs
+RUN=$XDG_RUNTIME_DIR/em
+
+if [ ! -d $RUN ]
+then
+  mkdir $RUN
+fi
+
+start () {
+  touch $RUN/$1.pid
+  cd $2
+  ( LD_LIBRARY_PATH=$LIBS $2/$1 & )
+}
+
+stop () {
+  killall $1
+  rm $RUN/$1.pid
+}
+
+case $1 in
+  bar)
+    if [ -f $RUN/bar.pid ]
+    then
+      stop "bar"
+    else
+      start "bar" $DOCKS/bar
+    fi
+    ;;
+  launcher)
+    if [ -f $RUN/launcher.pid ]
+    then
+      stop "launcher"
+    else
+      start "launcher" $DOCKS/launcher
+    fi
+    ;;
+esac

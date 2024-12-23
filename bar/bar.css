@@ -1,0 +1,116 @@
+@import "../themes/theme.css";
+
+
+button {
+  background: @WIN_BG_CLR;
+  padding: 0px;
+  border: none;
+  outline: none;
+  text-decoration: none;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+button:hover {
+  background: @AC_WS_BG_CLR;
+  padding: 0px;
+  border: none;
+  outline: none;
+  text-decoration: none;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+label {
+  color: @WIN_FN_CLR;
+}
+
+window {
+  background: @WIN_BG_CLR;
+  font-family: monospace;
+}
+
+.baseBox {
+  background: @BASE_BG_CLR;
+  border-radius: 4px;
+  min-width: 1250px;
+}
+
+.activeWorkspace {
+  background: @AC_WS_BG_CLR;
+  min-width: 12px;
+  min-height: 12px;
+  margin: 0px 5px 0px 0px;
+  border-radius: 50px;
+}
+
+.nonActiveWorkspace {
+  background: @N_AC_WS_BG_CLR;
+  min-width: 12px;
+  min-height: 12px;
+  margin: 0px 5px 0px 0px;
+  border-radius: 50px;
+}
+
+.workspaces {
+  background: @BOX_BG_CLR;
+  margin: 5px;
+  padding: 5px 0px 0px 5px;
+  border-radius: 4px;
+}
+
+.leftWidgets {
+  background: @BASE_BG_CLR;
+}
+
+.clock {
+  background: @BOX_BG_CLR;
+  margin: 5px;
+  padding: 0px 5px 0px 5px;
+  border-radius: 4px;
+}
+
+.volumeLevel {
+  margin-left: 3px;
+}
+
+.volume {
+  margin: 5px;
+  padding: 0px 5px 0px 5px;
+  border-radius: 4px;
+  background: @BOX_BG_CLR;
+}
+
+.batteryLevel{
+  margin-left: 3px;
+}
+
+.timeRemaining {
+  margin-left: 10px;
+}
+
+.battery {
+  margin: 5px;
+  padding: 0px 5px 0px 5px;
+  border-radius: 4px;
+  background: @BOX_BG_CLR;
+}
+
+image {
+  padding: 0;
+  margin: 0px;
+  box-shadow: none;
+  text-shadow: 2px 2px green;
+  text-decoration: none;
+}
+
+.systemButtons {
+  margin: 5px;
+  padding: 0px 3px 0px 3px;
+  border-radius: 4px;
+  background: @BOX_BG_CLR;
+}
+
+.rightWidgets {
+  background: @WIN_BG_CLR;
+}
