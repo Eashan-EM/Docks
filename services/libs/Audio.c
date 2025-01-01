@@ -3,9 +3,9 @@
 
 #include "Audio.h"
 #include <pulse/pulseaudio.h>
+#include <glib.h>
 #include <stdlib.h>
 #include <string.h>
-#include <glib.h>
 #include "Utils.h"
 #include <glib-object.h>
 
@@ -30,8 +30,8 @@ enum  {
 };
 static GParamSpec* audio_properties[AUDIO_NUM_PROPERTIES];
 #define _pa_mainloop_free0(var) ((var == NULL) ? NULL : (var = (pa_mainloop_free (var), NULL)))
-#define _g_free0(var) (var = (g_free (var), NULL))
 #define _g_thread_unref0(var) ((var == NULL) ? NULL : (var = (g_thread_unref (var), NULL)))
+#define _g_free0(var) (var = (g_free (var), NULL))
 #define _pa_context_unref0(var) ((var == NULL) ? NULL : (var = (pa_context_unref (var), NULL)))
 #define _pa_operation_unref0(var) ((var == NULL) ? NULL : (var = (pa_operation_unref (var), NULL)))
 enum  {
@@ -51,6 +51,7 @@ static guint audio_signals[AUDIO_NUM_SIGNALS] = {0};
 
 struct _AudioPrivate {
 	pa_mainloop* loop;
+	GThread* thread;
 	gchar** _sinks;
 	gint _sinks_length1;
 	gint __sinks_size_;
@@ -142,12 +143,11 @@ _audio_run_gthread_func (gpointer self)
 void
 audio_start (Audio* self)
 {
-	GThread* thread = NULL;
 	GThread* _tmp0_;
 	g_return_if_fail (self != NULL);
 	_tmp0_ = g_thread_new ("audio", _audio_run_gthread_func, g_object_ref (self));
-	thread = _tmp0_;
-	_g_thread_unref0 (thread);
+	_g_thread_unref0 (self->priv->thread);
+	self->priv->thread = _tmp0_;
 }
 
 static void
@@ -173,10 +173,10 @@ audio_run (Audio* self)
 	_tmp0_ = pa_mainloop_new ();
 	_pa_mainloop_free0 (self->priv->loop);
 	self->priv->loop = _tmp0_;
-	_tmp1_ = g_new0 (gchar*, 10 + 1);
+	_tmp1_ = g_new0 (gchar*, 30 + 1);
 	_tmp2_ = _tmp1_;
-	_tmp2__length1 = 10;
-	audio_set_sinks (self, _tmp2_, 10);
+	_tmp2__length1 = 30;
+	audio_set_sinks (self, _tmp2_, 30);
 	_tmp2_ = (_vala_array_free (_tmp2_, _tmp2__length1, (GDestroyNotify) g_free), NULL);
 	_tmp3_ = self->priv->loop;
 	_tmp4_ = pa_mainloop_get_api (_tmp3_);
@@ -596,6 +596,46 @@ audio_default_sink_callback (Audio* self,
 	}
 }
 
+static gchar*
+string_slice (const gchar* self,
+              glong start,
+              glong end)
+{
+	glong string_length = 0L;
+	gint _tmp0_;
+	gint _tmp1_;
+	gboolean _tmp2_ = FALSE;
+	gboolean _tmp3_ = FALSE;
+	gchar* _tmp4_;
+	gchar* result;
+	g_return_val_if_fail (self != NULL, NULL);
+	_tmp0_ = strlen (self);
+	_tmp1_ = _tmp0_;
+	string_length = (glong) _tmp1_;
+	if (start < ((glong) 0)) {
+		start = string_length + start;
+	}
+	if (end < ((glong) 0)) {
+		end = string_length + end;
+	}
+	if (start >= ((glong) 0)) {
+		_tmp2_ = start <= string_length;
+	} else {
+		_tmp2_ = FALSE;
+	}
+	g_return_val_if_fail (_tmp2_, NULL);
+	if (end >= ((glong) 0)) {
+		_tmp3_ = end <= string_length;
+	} else {
+		_tmp3_ = FALSE;
+	}
+	g_return_val_if_fail (_tmp3_, NULL);
+	g_return_val_if_fail (start <= end, NULL);
+	_tmp4_ = g_strndup (((gchar*) self) + start, (gsize) (end - start));
+	result = _tmp4_;
+	return result;
+}
+
 static void
 _audio_default_sink_callback_pa_sink_info_cb_t (pa_context* c,
                                                 pa_sink_info* i,
@@ -617,8 +657,10 @@ audio_get_default_sink (Audio* self,
 	gint _tmp3__length1;
 	gchar* _tmp4_;
 	gchar* _tmp5_;
-	pa_operation* _tmp6_;
-	pa_operation* _tmp7_;
+	gchar* _tmp6_;
+	gchar* _tmp7_;
+	pa_operation* _tmp8_;
+	pa_operation* _tmp9_;
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (context != NULL);
 	_tmp0_ = g_strdup ("pactl");
@@ -632,9 +674,12 @@ audio_get_default_sink (Audio* self,
 	_tmp5_ = _tmp4_;
 	_tmp3_ = (_vala_array_free (_tmp3_, _tmp3__length1, (GDestroyNotify) g_free), NULL);
 	sink_name = _tmp5_;
-	_tmp6_ = pa_context_get_sink_info_by_name (context, sink_name, _audio_default_sink_callback_pa_sink_info_cb_t, self);
+	_tmp6_ = string_slice (sink_name, (glong) 0, (glong) -1);
 	_tmp7_ = _tmp6_;
-	_pa_operation_unref0 (_tmp7_);
+	_tmp8_ = pa_context_get_sink_info_by_name (context, _tmp7_, _audio_default_sink_callback_pa_sink_info_cb_t, self);
+	_tmp9_ = _tmp8_;
+	_pa_operation_unref0 (_tmp9_);
+	_g_free0 (_tmp7_);
 	_g_free0 (sink_name);
 }
 
@@ -965,8 +1010,19 @@ static void
 audio_finalize (GObject * obj)
 {
 	Audio * self;
+	pa_mainloop* _tmp0_;
 	self = G_TYPE_CHECK_INSTANCE_CAST (obj, TYPE_AUDIO, Audio);
+	_tmp0_ = self->priv->loop;
+	if (_tmp0_ != NULL) {
+		pa_mainloop* _tmp1_;
+		GThread* _tmp2_;
+		_tmp1_ = self->priv->loop;
+		pa_mainloop_quit (_tmp1_, 0);
+		_tmp2_ = self->priv->thread;
+		g_thread_exit (_tmp2_);
+	}
 	_pa_mainloop_free0 (self->priv->loop);
+	_g_thread_unref0 (self->priv->thread);
 	self->priv->_sinks = (_vala_array_free (self->priv->_sinks, self->priv->_sinks_length1, (GDestroyNotify) g_free), NULL);
 	_g_free0 (self->priv->_default_sink_name);
 	_g_free0 (self->priv->_default_sink_icon_name);

@@ -10,6 +10,7 @@ struct App {
 class Launcher: Object {
   private Window window;
   private int apps_list_length = 0;
+  private int total_show_apps = 0;
   private int selected_app = 0;
   private App[] app_list = new App[256];
   private Widget[] wid_list = new Widget[256];
@@ -88,8 +89,8 @@ Gtk.init(ref args);
     if (32<=key && key<=126) {
       return true;
     }
-    if (key==65288 || key==65293 || key==65362 || key==65364) {
-      // 65288 is Backspace, 655293 is Enter, 65362 is UP, 65364 is DOWN
+    if (key==65288 /*|| key==65293*/ || key==65362 || key==65364) {
+      // 65288 is Backspace, 65293 is Enter, 65362 is UP, 65364 is DOWN
       return true;
     }
     return false;
@@ -106,12 +107,10 @@ Gtk.init(ref args);
         } else if (key.keyval==65362) {
           if (this.selected_app>0) {
             this.selected_app--;
-            print("up\n");
             this.select_app(true, true);
           }
         } else if (key.keyval==65364) {
-          if (this.selected_app<this.apps_list_length) {
-            print("down\n");
+          if (this.selected_app<this.total_show_apps-1) {
             this.selected_app++;
             this.select_app(true, false);
           }
@@ -122,7 +121,7 @@ Gtk.init(ref args);
         if (this.query.length==0) {
           this.search.set_label("Search...");
         }
-        if (key.keyval!=65363 && key.keyval!=65364) {
+        if (key.keyval!=65362 && key.keyval!=65364 && key.keyval!=65293) {
           this.show_apps(this.query);
         }
       }
@@ -223,16 +222,24 @@ Gtk.init(ref args);
     Button temp_btn;
 
     this.wid_list = new Widget[256];
-    for (int i=0; i<this.apps_list_length; i++) {
-      temp_btn = new Button.from_icon_name(this.app_list[i].icon);
-      new Image.from_icon_name(this.app_list[i].icon, IconSize.BUTTON);
-      temp_btn.set_label(this.app_list[i].name);
-      this.in_app_holder.pack_start(temp_btn, false, false, 0);
-      temp_btn.set_relief(ReliefStyle.NONE);
-      connect_btn(temp_btn, i);
-      this.wid_list[i] = temp_btn;
-    }
     this.selected_app = 0;
+    this.total_show_apps = 0;
+    for (int i=0; i<this.apps_list_length; i++) {
+      if (name=="" || this.app_list[i].name.down().contains(name)) {
+        temp_btn = new Button.from_icon_name(this.app_list[i].icon);
+        new Image.from_icon_name(this.app_list[i].icon, IconSize.BUTTON);
+        temp_btn.set_label(this.app_list[i].name);
+        this.in_app_holder.pack_start(temp_btn, false, false, 0);
+        temp_btn.set_relief(ReliefStyle.NONE);
+        connect_btn(temp_btn, i);
+        this.wid_list[this.total_show_apps++] = temp_btn;
+      }
+    }
+    if (this.total_show_apps==0) {
+      this.selected_app = -1;
+    } else {
+      this.selected_app = 0;
+    }
     this.select_app(false, false);
     this.viewport.add(this.in_app_holder);
     Utils.add_class(this.in_app_holder, "inAppHolder");

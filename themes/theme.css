@@ -7,7 +7,7 @@
 /*  Base Box Color Definition
  *  BASE: Base Box
 */
-@define-color BASE_BG_CLR rgba(35, 35, 35, 1.0);
+@define-color BASE_BG_CLR rgba(35, 35, 35, 0.0);
 
 /* Background for boxes Color Definition
 */

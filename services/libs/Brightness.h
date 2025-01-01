@@ -3,9 +3,52 @@
 #ifndef ___HOME_EM_DESKTOP_CODE_DOCKS_SERVICES_LIBS_BRIGHTNESS_H__
 #define ___HOME_EM_DESKTOP_CODE_DOCKS_SERVICES_LIBS_BRIGHTNESS_H__
 
+#include <glib-object.h>
 #include <glib.h>
+#include <stdlib.h>
+#include <string.h>
 
 G_BEGIN_DECLS
+
+#if !defined(VALA_EXTERN)
+#if defined(_MSC_VER)
+#define VALA_EXTERN __declspec(dllexport) extern
+#elif __GNUC__ >= 4
+#define VALA_EXTERN __attribute__((visibility("default"))) extern
+#else
+#define VALA_EXTERN extern
+#endif
+#endif
+
+#define TYPE_BRIGHTNESS (brightness_get_type ())
+#define BRIGHTNESS(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), TYPE_BRIGHTNESS, Brightness))
+#define BRIGHTNESS_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), TYPE_BRIGHTNESS, BrightnessClass))
+#define IS_BRIGHTNESS(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TYPE_BRIGHTNESS))
+#define IS_BRIGHTNESS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TYPE_BRIGHTNESS))
+#define BRIGHTNESS_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), TYPE_BRIGHTNESS, BrightnessClass))
+
+typedef struct _Brightness Brightness;
+typedef struct _BrightnessClass BrightnessClass;
+typedef struct _BrightnessPrivate BrightnessPrivate;
+
+struct _Brightness {
+	GObject parent_instance;
+	BrightnessPrivate * priv;
+};
+
+struct _BrightnessClass {
+	GObjectClass parent_class;
+};
+
+VALA_EXTERN GType brightness_get_type (void) G_GNUC_CONST ;
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (Brightness, g_object_unref)
+VALA_EXTERN Brightness* brightness_new (void);
+VALA_EXTERN Brightness* brightness_construct (GType object_type);
+VALA_EXTERN void brightness_start (Brightness* self);
+VALA_EXTERN void brightness_set_brightness (Brightness* self,
+                                gint level);
+VALA_EXTERN gint brightness_get_level (Brightness* self);
+VALA_EXTERN const gchar* brightness_get_icon_name (Brightness* self);
 
 G_END_DECLS
 

@@ -1,13 +1,17 @@
 namespace Utils {
   public void add_class(Gtk.Widget wid, string class_name) {
-    Gtk.StyleContext context = wid.get_style_context();
-    context.add_class(class_name);
+    if (wid!=null) {
+      Gtk.StyleContext context = wid.get_style_context();
+      context.add_class(class_name);
+    }
   }
 
   public void remove_class(Gtk.Widget wid, string class_name) {
-    Gtk.StyleContext context = wid.get_style_context();
-    context.remove_class(class_name);
-  }
+    if (wid!=null) {   
+      Gtk.StyleContext context = wid.get_style_context();
+      context.remove_class(class_name);
+    }
+}
 
   public void load_style(string file_name) {
     Gtk.CssProvider css_provider = new Gtk.CssProvider();
@@ -34,6 +38,9 @@ namespace Utils {
       inp.read_all(buf, out bytes_read);
       output = output.concat((string) buf);
     } while (bytes_read==512);
+
+    inp.close();
+    process.force_exit();
     return output;
   }
 
@@ -45,29 +52,44 @@ namespace Utils {
     private Thread thread;
     private string name;
 
+    private Subprocess process;
+    private InputStream inp;
+
     public Exec_Threads(string[] command, string name) {
       this.command = command;
       this.name = name;
     }
 
+    ~Exec_Threads() {
+      this.close();
+    }
+
+    private void close() {
+      if (this.process!=null && this.inp!=null) {
+        this.inp.close();
+        this.process.force_exit();
+      }
+    }
     public void start() {
       this.thread = new Thread<void>(this.name, execute);
     }
 
     private void execute() {
-      Subprocess process = new Subprocess.newv(this.command, STDOUT_PIPE);
-      InputStream inp = process.get_stdout_pipe();
+      this.process = new Subprocess.newv(this.command, STDOUT_PIPE);
+      this.inp = process.get_stdout_pipe();
       int64 bytes_read = 0;
       uint8[] buf;
       while (!inp.is_closed()) {
         str = "";
         do {
           buf = new uint8[512];
-          inp.read(buf);
+          this.inp.read(buf);
           str = str.concat((string) buf);
         } while (bytes_read==512);
         foreach (string s in str.split("\n")) {
-          this.output(s);
+          if (s!="") {
+            this.output(s);
+          }
         } 
       }
     }
@@ -82,10 +104,25 @@ namespace Utils {
     private Thread thread;
     private string name;
 
+    private Subprocess process;
+    private InputStream inp;
+
     public Time_Threads(int time, string[] command, string name) {
       this.time = time;
       this.command = command;
       this.name = name;
+    }
+
+    ~Time_Threads() {
+      this.close();
+      Thread.exit(this.thread);
+    }
+
+    private void close() {
+      if (this.process!=null && this.inp!=null) {
+        this.inp.close();
+        this.process.force_exit();
+      }
     }
 
     public void start() {
@@ -93,21 +130,20 @@ namespace Utils {
     }
 
     private void execute() {
-      Subprocess process;
-      InputStream inp;
       int64 bytes_read = 128;
       uint8[] buf;
       while (true) {
-        process = new Subprocess.newv(this.command, STDOUT_PIPE);
-        inp = process.get_stdout_pipe();
+        this.process = new Subprocess.newv(this.command, STDOUT_PIPE);
+        this.inp = process.get_stdout_pipe();
         str = "";
         do {
           buf = new uint8[128];
-          inp.read_all(buf, out bytes_read);
+          this.inp.read_all(buf, out bytes_read);
           str = str.concat((string) buf);
         } while (bytes_read==128);
-        this.output(str[0:-1]);
+        this.output(str);
         Utils.exec({"sleep", @"$(this.time)"});
+        this.close();
       }
     }
   }

@@ -28,6 +28,7 @@ label {
 window {
   background: @WIN_BG_CLR;
   font-family: monospace;
+  border-radius: 4px;
 }
 
 .baseBox {
@@ -64,6 +65,17 @@ window {
 }
 
 .clock {
+  background: @BOX_BG_CLR;
+  margin: 5px;
+  padding: 0px 5px 0px 5px;
+  border-radius: 4px;
+}
+
+.brightnessLevel {
+  margin-left: 3px;
+}
+
+.brightness {
   background: @BOX_BG_CLR;
   margin: 5px;
   padding: 0px 5px 0px 5px;

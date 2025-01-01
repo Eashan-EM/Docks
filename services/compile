@@ -19,12 +19,12 @@ then
   gcc --shared -fPIC -o $LIBS/libUpower.so $(pkg-config --cflags --libs gobject-2.0 json-glib-1.0 gtk-layer-shell-0) $LIBS/Upower.c
 elif [ $1 == "Bluetooth.vala" ]
 then
-  valac -C -H $LIBS/Bluetooth.h --library $LIBS/Bluetooth $SER/Bluetooth.vala --basedir $LIBS/
+  valac $LIBS/Utils.vapi --pkg Gtk-3.0 --pkg gtk-layer-shell-0 -C -H $LIBS/Bluetooth.h --library $LIBS/Bluetooth $SER/Bluetooth.vala --basedir $LIBS/
   gcc --shared -fPIC -o $LIBS/libBluetooth.so $(pkg-config --cflags --libs gobject-2.0) $LIBS/Bluetooth.c
 elif [ $1 == "Brightness.vala" ]
 then
-  valac -C -H $LIBS/Brightness.h --library $LIBS/Brightness $SER/Brightness.vala --basedir $LIBS/
-  gcc --shared -fPIC -o $LIBS/libBrightness.so $(pkg-config --cflags --libs gobject-2.0) $LIBS/Brightness.c
+  valac $LIBS/Hyprland.vapi $LIBS/Utils.vapi --pkg Gtk-3.0 --pkg gtk-layer-shell-0 -C -H $LIBS/Brightness.h --library $LIBS/Brightness $SER/Brightness.vala --basedir $LIBS/
+  gcc --shared -fPIC -o $LIBS/libBrightness.so $(pkg-config --cflags --libs gobject-2.0 gtk-layer-shell-0) $LIBS/Brightness.c
 elif [ $1 == "Network.vala" ]
 then
   valac -C -H $LIBS/Network.h --library $LIBS/Network $SER/Network.vala --basedir $LIBS/

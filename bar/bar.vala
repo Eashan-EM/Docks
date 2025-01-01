@@ -6,11 +6,16 @@ public class Bar: Object {
   public Hyprland hypr;
   public Audio audio;
   public Upower power;
+  public Bluetooth blue;
+  public Brightness bright;
 
   public Bar(string[] args) {
     this.hypr = new Hyprland();
     this.audio = new Audio();
     this.power = new Upower();
+    //this.blue = new Bluetooth();
+    this.bright = new Brightness();
+
 
     Gtk.init(ref args);
     this.window = new Window();
@@ -18,6 +23,7 @@ public class Bar: Object {
 
     GtkLayerShell.init_for_window(window);
     GtkLayerShell.auto_exclusive_zone_enable(window);
+    //GtkLayerShell.set_keyboard_mode(window, KeyboardMode.ON_DEMAND);
 
     GtkLayerShell.set_margin(window, GtkLayerShell.Edge.LEFT, 10);
     GtkLayerShell.set_margin(window, GtkLayerShell.Edge.RIGHT, 10);
@@ -33,6 +39,7 @@ public class Bar: Object {
     hypr.start();
     audio.start();
     power.start();
+    bright.start();
     Utils.load_style("bar.css");
     Gtk.main();
   }
@@ -79,22 +86,64 @@ public class Bar: Object {
     var clock_thread = new Utils.Time_Threads(60, {"date", "+%H:%M / %a %d %B"}, "clock");
 
     clock_thread.output.connect((t, time) => {
-      clock.set_label(time);
+      clock.set_label(time[0:-1]);
     });
     clock_thread.start();
     return clock;
   }
   
+  Widget brightness() {
+    Box box = new Box(Gtk.Orientation.HORIZONTAL, 0);
+    Button btn = new Button.from_icon_name(bright.icon_name);
+
+    int[] levels = {20, 60, 100};
+    int curr_level = 2;
+
+    btn.button_press_event.connect((e) => {
+      switch (e.type) {
+        case Gdk.EventType.BUTTON_PRESS:
+          curr_level = (curr_level+1)%3;
+          bright.set_brightness(levels[curr_level]);
+          break;
+        default:
+          break;
+      };
+      return false;
+    });
+    Label level = new Label("");
+
+    bright.sig_brightness_change.connect((l) => {
+      level.set_label("%3d%%".printf(l));
+    });
+
+    btn.set_relief(ReliefStyle.NONE);
+    box.pack_start(btn, false, false, 0);
+    box.pack_start(level, false, false, 0);
+    Utils.add_class(btn, "brightnessImage");
+    Utils.add_class(level, "brightnessLevel");
+    Utils.add_class(box, "brightness");
+    return box;
+  }
+
   Widget volume() {
     Box box = new Box(Gtk.Orientation.HORIZONTAL, 0);
     Button btn = new Button.from_icon_name("audio-headphones-symbolic");
-    btn.clicked.connect(() => {
-      audio.set_sink_default_toggle_mute();
+    btn.button_press_event.connect((e) => {
+      switch (e.type) {
+        case Gdk.EventType.2BUTTON_PRESS:
+          break;
+        case Gdk.EventType.BUTTON_PRESS:
+          audio.set_sink_default_toggle_mute();
+          break;
+        default:
+          break;
+      };
+      return false;
     });
     Label volume = new Label("");
 
     audio.sig_default_sink_vol_change.connect((t, vol) => {
-      volume.set_label(vol.to_string().concat("%"));
+      volume.set_label("%3d%%".printf(vol));
     });
 
     box.pack_start(btn);
@@ -113,7 +162,7 @@ public class Bar: Object {
     Image icon = new Image();
     battery_icon.set_image(icon);
     Label battery_level= new Label("");
-    Button time_remaining = new Button.with_label("");
+    //Button time_remaining = new Button.with_label("");
 
     power.sig_icon_name_change.connect((name) => {
       if (name!=icon_name) {
@@ -124,21 +173,21 @@ public class Bar: Object {
 
     string[] time_break = new string[2];
     power.sig_battery_level_change.connect((level) => {
-      battery_level.set_label(level.to_string().concat("%"));
+      battery_level.set_label("%3d%%".printf(level));
       time_break = power.time_remaining.split(" ");
-      if (time_break.length==2) {
+      /*if (time_break[0]!=null && time_break[1]!=null) {
         time_remaining.set_label(time_break[0].concat((time_break[1]=="hours")?"hrs":"min"));
-      }
+      }*/
     });
 
     box.pack_start(battery_icon, false, false, 0);
     box.set_center_widget(battery_level);
-    box.pack_end(time_remaining, false, false, 0);
+    //box.pack_end(time_remaining, false, false, 0);
 
     battery_icon.set_relief(ReliefStyle.NONE);
 
     Utils.add_class(battery_level, "batteryLevel");
-    Utils.add_class(time_remaining, "timeRemaining");
+    //Utils.add_class(time_remaining, "timeRemaining");
     Utils.add_class(box, "battery");
     return box;
   }
@@ -234,6 +283,7 @@ public class Bar: Object {
     right.pack_end(system_buttons(), false, false, 0);
     right.pack_end(battery(), false, false, 0);
     right.pack_end(volume(), false, false, 0);
+    right.pack_end(brightness(), false, false, 0);
     Utils.add_class(right, "rightBox");
     return right;
   }
@@ -249,7 +299,7 @@ public class Bar: Object {
   }
 
   public static int main(string[] args) {
-    Bar bar = new Bar(args);
+    new Bar(args);
 
     return 0;
   }

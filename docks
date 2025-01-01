@@ -37,4 +37,19 @@ case $1 in
       start "launcher" $DOCKS/launcher
     fi
     ;;
+  inc-vol)
+    pactl set-sink-volume $(pactl get-default-sink) +2%
+    ;;
+  dec-vol)
+    pactl set-sink-volume $(pactl get-default-sink) -2%
+    ;;
+  mute-vol)
+    pactl set-sink-mute $(pactl get-default-sink) toggle
+    ;;
+  inc-bri)
+    hyprctl dispatch exec brightnessctl set +5%
+    ;;
+  dec-bri)
+    hyprctl dispatch exec brightnessctl set 5%-
+    ;;
 esac

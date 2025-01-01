@@ -50,6 +50,8 @@ public class Hyprland: Object {
   public signal void sig_clients(Hypr.Window[] w);
   public signal void sig_current_workspace_clients(Hypr.Window[] w);
 
+  private Thread thread;
+
   public Hyprland () {
     this.set_active_window();
     this.set_workspaces();

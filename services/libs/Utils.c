@@ -52,6 +52,8 @@ struct _UtilsExec_ThreadsPrivate {
 	gint _command_size_;
 	GThread* thread;
 	gchar* name;
+	GSubprocess* process;
+	GInputStream* inp;
 };
 
 struct _UtilsTime_ThreadsPrivate {
@@ -62,6 +64,8 @@ struct _UtilsTime_ThreadsPrivate {
 	gint _command_size_;
 	GThread* thread;
 	gchar* name;
+	GSubprocess* process;
+	GInputStream* inp;
 };
 
 static gint UtilsExec_Threads_private_offset;
@@ -69,12 +73,14 @@ static gpointer utils_exec_threads_parent_class = NULL;
 static gint UtilsTime_Threads_private_offset;
 static gpointer utils_time_threads_parent_class = NULL;
 
+static void utils_exec_threads_close (UtilsExec_Threads* self);
 static gchar** _vala_array_dup1 (gchar** self,
                           gssize length);
 static void utils_exec_threads_execute (UtilsExec_Threads* self);
 static gpointer _utils_exec_threads_execute_gthread_func (gpointer self);
 static void utils_exec_threads_finalize (GObject * obj);
 static GType utils_exec_threads_get_type_once (void);
+static void utils_time_threads_close (UtilsTime_Threads* self);
 static gchar** _vala_array_dup2 (gchar** self,
                           gssize length);
 static void utils_time_threads_execute (UtilsTime_Threads* self);
@@ -99,32 +105,40 @@ void
 utils_add_class (GtkWidget* wid,
                  const gchar* class_name)
 {
-	GtkStyleContext* context = NULL;
-	GtkStyleContext* _tmp0_;
-	GtkStyleContext* _tmp1_;
 	g_return_if_fail (wid != NULL);
 	g_return_if_fail (class_name != NULL);
-	_tmp0_ = gtk_widget_get_style_context (wid);
-	_tmp1_ = _g_object_ref0 (_tmp0_);
-	context = _tmp1_;
-	gtk_style_context_add_class (context, class_name);
-	_g_object_unref0 (context);
+	if (wid != NULL) {
+		GtkStyleContext* context = NULL;
+		GtkStyleContext* _tmp0_;
+		GtkStyleContext* _tmp1_;
+		GtkStyleContext* _tmp2_;
+		_tmp0_ = gtk_widget_get_style_context (wid);
+		_tmp1_ = _g_object_ref0 (_tmp0_);
+		context = _tmp1_;
+		_tmp2_ = context;
+		gtk_style_context_add_class (_tmp2_, class_name);
+		_g_object_unref0 (context);
+	}
 }
 
 void
 utils_remove_class (GtkWidget* wid,
                     const gchar* class_name)
 {
-	GtkStyleContext* context = NULL;
-	GtkStyleContext* _tmp0_;
-	GtkStyleContext* _tmp1_;
 	g_return_if_fail (wid != NULL);
 	g_return_if_fail (class_name != NULL);
-	_tmp0_ = gtk_widget_get_style_context (wid);
-	_tmp1_ = _g_object_ref0 (_tmp0_);
-	context = _tmp1_;
-	gtk_style_context_remove_class (context, class_name);
-	_g_object_unref0 (context);
+	if (wid != NULL) {
+		GtkStyleContext* context = NULL;
+		GtkStyleContext* _tmp0_;
+		GtkStyleContext* _tmp1_;
+		GtkStyleContext* _tmp2_;
+		_tmp0_ = gtk_widget_get_style_context (wid);
+		_tmp1_ = _g_object_ref0 (_tmp0_);
+		context = _tmp1_;
+		_tmp2_ = context;
+		gtk_style_context_remove_class (_tmp2_, class_name);
+		_g_object_unref0 (context);
+	}
 }
 
 void
@@ -198,6 +212,8 @@ utils_exec (gchar** command,
 	gint buf_length1 = 0;
 	gint _buf_size_ = 0;
 	gint64 bytes_read = 0LL;
+	GInputStream* _tmp13_;
+	GSubprocess* _tmp14_;
 	GError* _inner_error0_ = NULL;
 	gchar* result;
 	_tmp0_ = g_subprocess_newv (command, G_SUBPROCESS_FLAGS_STDOUT_PIPE, &_inner_error0_);
@@ -260,6 +276,19 @@ utils_exec (gchar** command,
 			output = _tmp12_;
 		}
 	}
+	_tmp13_ = inp;
+	g_input_stream_close (_tmp13_, NULL, &_inner_error0_);
+	if (G_UNLIKELY (_inner_error0_ != NULL)) {
+		buf = (g_free (buf), NULL);
+		_g_free0 (output);
+		_g_object_unref0 (inp);
+		_g_object_unref0 (process);
+		g_critical ("file %s: line %d: uncaught error: %s (%s, %d)", __FILE__, __LINE__, _inner_error0_->message, g_quark_to_string (_inner_error0_->domain), _inner_error0_->code);
+		g_clear_error (&_inner_error0_);
+		return NULL;
+	}
+	_tmp14_ = process;
+	g_subprocess_force_exit (_tmp14_);
 	result = output;
 	buf = (g_free (buf), NULL);
 	_g_object_unref0 (inp);
@@ -323,6 +352,36 @@ utils_exec_threads_new (gchar** command,
 	return utils_exec_threads_construct (UTILS_TYPE_EXEC_THREADS, command, command_length1, name);
 }
 
+static void
+utils_exec_threads_close (UtilsExec_Threads* self)
+{
+	gboolean _tmp0_ = FALSE;
+	GSubprocess* _tmp1_;
+	GError* _inner_error0_ = NULL;
+	g_return_if_fail (self != NULL);
+	_tmp1_ = self->priv->process;
+	if (_tmp1_ != NULL) {
+		GInputStream* _tmp2_;
+		_tmp2_ = self->priv->inp;
+		_tmp0_ = _tmp2_ != NULL;
+	} else {
+		_tmp0_ = FALSE;
+	}
+	if (_tmp0_) {
+		GInputStream* _tmp3_;
+		GSubprocess* _tmp4_;
+		_tmp3_ = self->priv->inp;
+		g_input_stream_close (_tmp3_, NULL, &_inner_error0_);
+		if (G_UNLIKELY (_inner_error0_ != NULL)) {
+			g_critical ("file %s: line %d: uncaught error: %s (%s, %d)", __FILE__, __LINE__, _inner_error0_->message, g_quark_to_string (_inner_error0_->domain), _inner_error0_->code);
+			g_clear_error (&_inner_error0_);
+			return;
+		}
+		_tmp4_ = self->priv->process;
+		g_subprocess_force_exit (_tmp4_);
+	}
+}
+
 static gpointer
 _utils_exec_threads_execute_gthread_func (gpointer self)
 {
@@ -348,108 +407,116 @@ utils_exec_threads_start (UtilsExec_Threads* self)
 static void
 utils_exec_threads_execute (UtilsExec_Threads* self)
 {
-	GSubprocess* process = NULL;
-	gchar** _tmp0_;
-	gint _tmp0__length1;
-	GSubprocess* _tmp1_;
-	GInputStream* inp = NULL;
+	GSubprocess* _tmp0_ = NULL;
+	gchar** _tmp1_;
+	gint _tmp1__length1;
 	GSubprocess* _tmp2_;
-	GInputStream* _tmp3_;
-	GInputStream* _tmp4_;
+	GSubprocess* _tmp3_;
+	GSubprocess* _tmp4_;
+	GInputStream* _tmp5_;
+	GInputStream* _tmp6_;
 	gint64 bytes_read = 0LL;
 	guint8* buf = NULL;
 	gint buf_length1 = 0;
 	gint _buf_size_ = 0;
 	GError* _inner_error0_ = NULL;
 	g_return_if_fail (self != NULL);
-	_tmp0_ = self->priv->command;
-	_tmp0__length1 = self->priv->command_length1;
-	_tmp1_ = g_subprocess_newv (_tmp0_, G_SUBPROCESS_FLAGS_STDOUT_PIPE, &_inner_error0_);
-	process = _tmp1_;
+	_tmp1_ = self->priv->command;
+	_tmp1__length1 = self->priv->command_length1;
+	_tmp2_ = g_subprocess_newv (_tmp1_, G_SUBPROCESS_FLAGS_STDOUT_PIPE, &_inner_error0_);
+	_tmp0_ = _tmp2_;
 	if (G_UNLIKELY (_inner_error0_ != NULL)) {
 		g_critical ("file %s: line %d: uncaught error: %s (%s, %d)", __FILE__, __LINE__, _inner_error0_->message, g_quark_to_string (_inner_error0_->domain), _inner_error0_->code);
 		g_clear_error (&_inner_error0_);
 		return;
 	}
-	_tmp2_ = process;
-	_tmp3_ = g_subprocess_get_stdout_pipe (_tmp2_);
-	_tmp4_ = _g_object_ref0 (_tmp3_);
-	inp = _tmp4_;
+	_tmp3_ = _tmp0_;
+	_tmp0_ = NULL;
+	_g_object_unref0 (self->priv->process);
+	self->priv->process = _tmp3_;
+	_tmp4_ = self->priv->process;
+	_tmp5_ = g_subprocess_get_stdout_pipe (_tmp4_);
+	_tmp6_ = _g_object_ref0 (_tmp5_);
+	_g_object_unref0 (self->priv->inp);
+	self->priv->inp = _tmp6_;
 	bytes_read = (gint64) 0;
 	while (TRUE) {
-		GInputStream* _tmp5_;
-		gchar* _tmp6_;
-		const gchar* _tmp14_;
-		gchar** _tmp15_;
-		gchar** _tmp16_;
-		_tmp5_ = inp;
-		if (!(!g_input_stream_is_closed (_tmp5_))) {
+		GInputStream* _tmp7_;
+		gchar* _tmp8_;
+		const gchar* _tmp16_;
+		gchar** _tmp17_;
+		gchar** _tmp18_;
+		_tmp7_ = self->priv->inp;
+		if (!(!g_input_stream_is_closed (_tmp7_))) {
 			break;
 		}
-		_tmp6_ = g_strdup ("");
+		_tmp8_ = g_strdup ("");
 		_g_free0 (self->priv->str);
-		self->priv->str = _tmp6_;
+		self->priv->str = _tmp8_;
 		{
-			gboolean _tmp7_ = FALSE;
-			_tmp7_ = TRUE;
+			gboolean _tmp9_ = FALSE;
+			_tmp9_ = TRUE;
 			while (TRUE) {
-				guint8* _tmp8_;
-				GInputStream* _tmp9_;
 				guint8* _tmp10_;
-				gint _tmp10__length1;
-				const gchar* _tmp11_;
+				GInputStream* _tmp11_;
 				guint8* _tmp12_;
 				gint _tmp12__length1;
-				gchar* _tmp13_;
-				if (!_tmp7_) {
+				const gchar* _tmp13_;
+				guint8* _tmp14_;
+				gint _tmp14__length1;
+				gchar* _tmp15_;
+				if (!_tmp9_) {
 					if (!(bytes_read == ((gint64) 512))) {
 						break;
 					}
 				}
-				_tmp7_ = FALSE;
-				_tmp8_ = g_new0 (guint8, 512);
+				_tmp9_ = FALSE;
+				_tmp10_ = g_new0 (guint8, 512);
 				buf = (g_free (buf), NULL);
-				buf = _tmp8_;
+				buf = _tmp10_;
 				buf_length1 = 512;
 				_buf_size_ = buf_length1;
-				_tmp9_ = inp;
-				_tmp10_ = buf;
-				_tmp10__length1 = buf_length1;
-				g_input_stream_read (_tmp9_, _tmp10_, (gsize) _tmp10__length1, NULL, &_inner_error0_);
+				_tmp11_ = self->priv->inp;
+				_tmp12_ = buf;
+				_tmp12__length1 = buf_length1;
+				g_input_stream_read (_tmp11_, _tmp12_, (gsize) _tmp12__length1, NULL, &_inner_error0_);
 				if (G_UNLIKELY (_inner_error0_ != NULL)) {
 					buf = (g_free (buf), NULL);
-					_g_object_unref0 (inp);
-					_g_object_unref0 (process);
+					_g_object_unref0 (_tmp0_);
 					g_critical ("file %s: line %d: uncaught error: %s (%s, %d)", __FILE__, __LINE__, _inner_error0_->message, g_quark_to_string (_inner_error0_->domain), _inner_error0_->code);
 					g_clear_error (&_inner_error0_);
 					return;
 				}
-				_tmp11_ = self->priv->str;
-				_tmp12_ = buf;
-				_tmp12__length1 = buf_length1;
-				_tmp13_ = g_strconcat (_tmp11_, (const gchar*) _tmp12_, NULL);
+				_tmp13_ = self->priv->str;
+				_tmp14_ = buf;
+				_tmp14__length1 = buf_length1;
+				_tmp15_ = g_strconcat (_tmp13_, (const gchar*) _tmp14_, NULL);
 				_g_free0 (self->priv->str);
-				self->priv->str = _tmp13_;
+				self->priv->str = _tmp15_;
 			}
 		}
-		_tmp14_ = self->priv->str;
-		_tmp16_ = _tmp15_ = g_strsplit (_tmp14_, "\n", 0);
+		_tmp16_ = self->priv->str;
+		_tmp18_ = _tmp17_ = g_strsplit (_tmp16_, "\n", 0);
 		{
 			gchar** s_collection = NULL;
 			gint s_collection_length1 = 0;
 			gint _s_collection_size_ = 0;
 			gint s_it = 0;
-			s_collection = _tmp16_;
-			s_collection_length1 = _vala_array_length (_tmp15_);
+			s_collection = _tmp18_;
+			s_collection_length1 = _vala_array_length (_tmp17_);
 			for (s_it = 0; s_it < s_collection_length1; s_it = s_it + 1) {
-				gchar* _tmp17_;
+				gchar* _tmp19_;
 				gchar* s = NULL;
-				_tmp17_ = g_strdup (s_collection[s_it]);
-				s = _tmp17_;
+				_tmp19_ = g_strdup (s_collection[s_it]);
+				s = _tmp19_;
 				{
-					const gchar* _tmp18_;
-					_tmp18_ = s;
-					g_signal_emit (self, utils_exec_threads_signals[UTILS_EXEC_THREADS_OUTPUT_SIGNAL], 0, _tmp18_);
+					const gchar* _tmp20_;
+					_tmp20_ = s;
+					if (g_strcmp0 (_tmp20_, "") != 0) {
+						const gchar* _tmp21_;
+						_tmp21_ = s;
+						g_signal_emit (self, utils_exec_threads_signals[UTILS_EXEC_THREADS_OUTPUT_SIGNAL], 0, _tmp21_);
+					}
 					_g_free0 (s);
 				}
 			}
@@ -457,8 +524,7 @@ utils_exec_threads_execute (UtilsExec_Threads* self)
 		}
 	}
 	buf = (g_free (buf), NULL);
-	_g_object_unref0 (inp);
-	_g_object_unref0 (process);
+	_g_object_unref0 (_tmp0_);
 }
 
 static void
@@ -486,10 +552,13 @@ utils_exec_threads_finalize (GObject * obj)
 {
 	UtilsExec_Threads * self;
 	self = G_TYPE_CHECK_INSTANCE_CAST (obj, UTILS_TYPE_EXEC_THREADS, UtilsExec_Threads);
+	utils_exec_threads_close (self);
 	_g_free0 (self->priv->str);
 	self->priv->command = (_vala_array_free (self->priv->command, self->priv->command_length1, (GDestroyNotify) g_free), NULL);
 	_g_thread_unref0 (self->priv->thread);
 	_g_free0 (self->priv->name);
+	_g_object_unref0 (self->priv->process);
+	_g_object_unref0 (self->priv->inp);
 	G_OBJECT_CLASS (utils_exec_threads_parent_class)->finalize (obj);
 }
 
@@ -574,6 +643,36 @@ utils_time_threads_new (gint time,
 	return utils_time_threads_construct (UTILS_TYPE_TIME_THREADS, time, command, command_length1, name);
 }
 
+static void
+utils_time_threads_close (UtilsTime_Threads* self)
+{
+	gboolean _tmp0_ = FALSE;
+	GSubprocess* _tmp1_;
+	GError* _inner_error0_ = NULL;
+	g_return_if_fail (self != NULL);
+	_tmp1_ = self->priv->process;
+	if (_tmp1_ != NULL) {
+		GInputStream* _tmp2_;
+		_tmp2_ = self->priv->inp;
+		_tmp0_ = _tmp2_ != NULL;
+	} else {
+		_tmp0_ = FALSE;
+	}
+	if (_tmp0_) {
+		GInputStream* _tmp3_;
+		GSubprocess* _tmp4_;
+		_tmp3_ = self->priv->inp;
+		g_input_stream_close (_tmp3_, NULL, &_inner_error0_);
+		if (G_UNLIKELY (_inner_error0_ != NULL)) {
+			g_critical ("file %s: line %d: uncaught error: %s (%s, %d)", __FILE__, __LINE__, _inner_error0_->message, g_quark_to_string (_inner_error0_->domain), _inner_error0_->code);
+			g_clear_error (&_inner_error0_);
+			return;
+		}
+		_tmp4_ = self->priv->process;
+		g_subprocess_force_exit (_tmp4_);
+	}
+}
+
 static gpointer
 _utils_time_threads_execute_gthread_func (gpointer self)
 {
@@ -596,51 +695,9 @@ utils_time_threads_start (UtilsTime_Threads* self)
 	self->priv->thread = _tmp1_;
 }
 
-static gchar*
-string_slice (const gchar* self,
-              glong start,
-              glong end)
-{
-	glong string_length = 0L;
-	gint _tmp0_;
-	gint _tmp1_;
-	gboolean _tmp2_ = FALSE;
-	gboolean _tmp3_ = FALSE;
-	gchar* _tmp4_;
-	gchar* result;
-	g_return_val_if_fail (self != NULL, NULL);
-	_tmp0_ = strlen (self);
-	_tmp1_ = _tmp0_;
-	string_length = (glong) _tmp1_;
-	if (start < ((glong) 0)) {
-		start = string_length + start;
-	}
-	if (end < ((glong) 0)) {
-		end = string_length + end;
-	}
-	if (start >= ((glong) 0)) {
-		_tmp2_ = start <= string_length;
-	} else {
-		_tmp2_ = FALSE;
-	}
-	g_return_val_if_fail (_tmp2_, NULL);
-	if (end >= ((glong) 0)) {
-		_tmp3_ = end <= string_length;
-	} else {
-		_tmp3_ = FALSE;
-	}
-	g_return_val_if_fail (_tmp3_, NULL);
-	g_return_val_if_fail (start <= end, NULL);
-	_tmp4_ = g_strndup (((gchar*) self) + start, (gsize) (end - start));
-	result = _tmp4_;
-	return result;
-}
-
 static void
 utils_time_threads_execute (UtilsTime_Threads* self)
 {
-	GSubprocess* process = NULL;
-	GInputStream* inp = NULL;
 	gint64 bytes_read = 0LL;
 	guint8* buf = NULL;
 	gint buf_length1 = 0;
@@ -661,34 +718,30 @@ utils_time_threads_execute (UtilsTime_Threads* self)
 		const gchar* _tmp16_;
 		gchar* _tmp17_;
 		gchar* _tmp18_;
-		gchar* _tmp19_;
-		gchar* _tmp20_;
-		gchar** _tmp21_;
-		gchar** _tmp22_;
-		gint _tmp22__length1;
-		gchar* _tmp23_;
-		gchar* _tmp24_;
+		gchar** _tmp19_;
+		gchar** _tmp20_;
+		gint _tmp20__length1;
+		gchar* _tmp21_;
+		gchar* _tmp22_;
 		_tmp1_ = self->priv->command;
 		_tmp1__length1 = self->priv->command_length1;
 		_tmp2_ = g_subprocess_newv (_tmp1_, G_SUBPROCESS_FLAGS_STDOUT_PIPE, &_inner_error0_);
 		_tmp0_ = _tmp2_;
 		if (G_UNLIKELY (_inner_error0_ != NULL)) {
 			buf = (g_free (buf), NULL);
-			_g_object_unref0 (inp);
-			_g_object_unref0 (process);
 			g_critical ("file %s: line %d: uncaught error: %s (%s, %d)", __FILE__, __LINE__, _inner_error0_->message, g_quark_to_string (_inner_error0_->domain), _inner_error0_->code);
 			g_clear_error (&_inner_error0_);
 			return;
 		}
 		_tmp3_ = _tmp0_;
 		_tmp0_ = NULL;
-		_g_object_unref0 (process);
-		process = _tmp3_;
-		_tmp4_ = process;
+		_g_object_unref0 (self->priv->process);
+		self->priv->process = _tmp3_;
+		_tmp4_ = self->priv->process;
 		_tmp5_ = g_subprocess_get_stdout_pipe (_tmp4_);
 		_tmp6_ = _g_object_ref0 (_tmp5_);
-		_g_object_unref0 (inp);
-		inp = _tmp6_;
+		_g_object_unref0 (self->priv->inp);
+		self->priv->inp = _tmp6_;
 		_tmp7_ = g_strdup ("");
 		_g_free0 (self->priv->str);
 		self->priv->str = _tmp7_;
@@ -716,7 +769,7 @@ utils_time_threads_execute (UtilsTime_Threads* self)
 				buf = _tmp9_;
 				buf_length1 = 128;
 				_buf_size_ = buf_length1;
-				_tmp10_ = inp;
+				_tmp10_ = self->priv->inp;
 				_tmp11_ = buf;
 				_tmp11__length1 = buf_length1;
 				g_input_stream_read_all (_tmp10_, _tmp11_, (gsize) _tmp11__length1, &_tmp12_, NULL, &_inner_error0_);
@@ -724,8 +777,6 @@ utils_time_threads_execute (UtilsTime_Threads* self)
 				if (G_UNLIKELY (_inner_error0_ != NULL)) {
 					_g_object_unref0 (_tmp0_);
 					buf = (g_free (buf), NULL);
-					_g_object_unref0 (inp);
-					_g_object_unref0 (process);
 					g_critical ("file %s: line %d: uncaught error: %s (%s, %d)", __FILE__, __LINE__, _inner_error0_->message, g_quark_to_string (_inner_error0_->domain), _inner_error0_->code);
 					g_clear_error (&_inner_error0_);
 					return;
@@ -739,21 +790,19 @@ utils_time_threads_execute (UtilsTime_Threads* self)
 			}
 		}
 		_tmp16_ = self->priv->str;
-		_tmp17_ = string_slice (_tmp16_, (glong) 0, (glong) -1);
-		_tmp18_ = _tmp17_;
-		g_signal_emit (self, utils_time_threads_signals[UTILS_TIME_THREADS_OUTPUT_SIGNAL], 0, _tmp18_);
-		_g_free0 (_tmp18_);
-		_tmp19_ = g_strdup ("sleep");
-		_tmp20_ = g_strdup_printf ("%i", self->priv->time);
-		_tmp21_ = g_new0 (gchar*, 2 + 1);
-		_tmp21_[0] = _tmp19_;
-		_tmp21_[1] = _tmp20_;
+		g_signal_emit (self, utils_time_threads_signals[UTILS_TIME_THREADS_OUTPUT_SIGNAL], 0, _tmp16_);
+		_tmp17_ = g_strdup ("sleep");
+		_tmp18_ = g_strdup_printf ("%i", self->priv->time);
+		_tmp19_ = g_new0 (gchar*, 2 + 1);
+		_tmp19_[0] = _tmp17_;
+		_tmp19_[1] = _tmp18_;
+		_tmp20_ = _tmp19_;
+		_tmp20__length1 = 2;
+		_tmp21_ = utils_exec (_tmp20_, (gint) 2);
 		_tmp22_ = _tmp21_;
-		_tmp22__length1 = 2;
-		_tmp23_ = utils_exec (_tmp22_, (gint) 2);
-		_tmp24_ = _tmp23_;
-		_g_free0 (_tmp24_);
-		_tmp22_ = (_vala_array_free (_tmp22_, _tmp22__length1, (GDestroyNotify) g_free), NULL);
+		_g_free0 (_tmp22_);
+		_tmp20_ = (_vala_array_free (_tmp20_, _tmp20__length1, (GDestroyNotify) g_free), NULL);
+		utils_time_threads_close (self);
 		_g_object_unref0 (_tmp0_);
 	}
 }
@@ -782,11 +831,17 @@ static void
 utils_time_threads_finalize (GObject * obj)
 {
 	UtilsTime_Threads * self;
+	GThread* _tmp0_;
 	self = G_TYPE_CHECK_INSTANCE_CAST (obj, UTILS_TYPE_TIME_THREADS, UtilsTime_Threads);
+	utils_time_threads_close (self);
+	_tmp0_ = self->priv->thread;
+	g_thread_exit (_tmp0_);
 	_g_free0 (self->priv->str);
 	self->priv->command = (_vala_array_free (self->priv->command, self->priv->command_length1, (GDestroyNotify) g_free), NULL);
 	_g_thread_unref0 (self->priv->thread);
 	_g_free0 (self->priv->name);
+	_g_object_unref0 (self->priv->process);
+	_g_object_unref0 (self->priv->inp);
 	G_OBJECT_CLASS (utils_time_threads_parent_class)->finalize (obj);
 }
 

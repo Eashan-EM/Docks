@@ -14,6 +14,7 @@ public class Audio: Object {
   public signal void sig_default_sink_mute_change(bool muted);
 
   private PulseAudio.MainLoop loop;
+  private Thread thread;
 
   public string[] sinks{get; private set; }
   private int sinks_length = 0;
@@ -23,12 +24,19 @@ public class Audio: Object {
   public int default_sink_volume{get; private set; }
   public bool default_sink_mute{get; private set; }
 
+  ~Audio() {
+    if (this.loop!=null) {
+      this.loop.quit(0);
+      Thread.exit(this.thread);
+    }
+  }
+
   public void start() {
-    var thread = new Thread<void>("audio", this.run);
+    this.thread = new Thread<void>("audio", this.run);
   }
   private void run() {
     this.loop = new PulseAudio.MainLoop();
-    this.sinks = new string[10];
+    this.sinks = new string[30];
     Context con = new Context(this.loop.get_api(), "Audio");
 
     con.connect(null, Context.Flags.NOFAIL, null);
@@ -105,7 +113,7 @@ public class Audio: Object {
 
   private void get_default_sink(Context context) {
     string sink_name = Utils.exec({"pactl", "get-default-sink"});
-    context.get_sink_info_by_name(sink_name, this.default_sink_callback);
+    context.get_sink_info_by_name(sink_name[0:-1], this.default_sink_callback);
   }
 
   public void sinks_list_callback(Context context, SinkInfo? i, int eol) {
